@@ -94,14 +94,15 @@ func main() {
 	// UX
 	f_progress := flag.Bool("progress", false, "display progress bar to stdout")
 	f_debug := flag.Bool("debug", false, "include debug output")
+	f_dryrun := flag.Bool("dryrun", false, "print all planned commands but do not execute")
 
 	// Run params
-	f_jobs := flag.Uint("j", 0, "maximum number of concurrent jobs to run (default 0 = unlimited)")
+	f_jobs := flag.Uint("jobs", 0, "maximum number of concurrent jobs to run (default 0 = unlimited)")
 	f_dir := flag.String("dir", "", "execute commands from the given directory (default .)")
-	f_argfile := flag.String("f", "", "read command file for items instead of stdin")
+	f_argfile := flag.String("file", "", "read command file for items instead of stdin")
 
 	// Arguments, delimiters and substitutions
-	f_delim := flag.String("d", "\n", "command delimiter (default newline)")
+	f_delim := flag.String("delim", "\n", "command delimiter (default newline)")
 	f_null := flag.Bool("null", false, "use null byte as the delimiter (overwrites -d)")
 	f_replace := flag.String("replace", "{}", "replace instances of str with args read from stdin. Default {}, disable by setting to an empty string")
 
@@ -151,6 +152,14 @@ func main() {
 	}
 	readCh := makeReplacer(template, *f_replace, argCh)
 
+	// Early exit for dryruns, just print all constructed commands
+	if *f_dryrun {
+		for c := range readCh {
+			fmt.Println(c)
+		}
+		return
+	}
+
 	// Create the runner
 	cfg := runner.RunnerConfig{
 		Attempts:     max(1, *f_attempts),
@@ -162,7 +171,6 @@ func main() {
 		MinDelay:     *f_mindelay,
 		MaxDelay:     *f_maxdelay,
 	}
-
 	R := runner.NewRunner(&cfg)
 
 	// Listen for interrupts
@@ -186,5 +194,5 @@ func main() {
 		fmt.Println()
 	}
 	slog.Debug("end")
-
+	os.Exit(R.ExitCode)
 }

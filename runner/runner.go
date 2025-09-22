@@ -222,12 +222,11 @@ func (r *Runner) Done() {
 }
 
 // Blocks until the waitgroup is finished
-func (r *Runner) Wait() int {
+func (r *Runner) Wait() {
 	slog.Debug("waiting")
 	r.wg.Wait()
 	slog.Debug("waitgroup empty")
 	r.cancel()
-	return r.ExitCode
 }
 
 func (r *Runner) PrintBar() {
